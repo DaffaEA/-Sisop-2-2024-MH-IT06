@@ -54,10 +54,9 @@ int main() {
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
-
+while(1){
     listFilesRecursively(path);
-
-    return 0;
+}
 }
 
 void listFilesRecursively(char *basePath) {
