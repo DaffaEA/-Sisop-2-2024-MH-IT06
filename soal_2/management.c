@@ -81,24 +81,13 @@ void decrypt_filenames(const char *dir_path) {
 
                 if (rename(old_path, new_path) != 0) {
                     perror("Error renaming file");
-                } else {
-                    // Log the renaming action
-                    FILE *log_file = fopen("history.log", "a");
-                    if (log_file != NULL) {
-                        time_t raw_time;
-                        struct tm *time_info;
-                        time(&raw_time);
-                        time_info = localtime(&raw_time);
-                        fprintf(log_file, "[shittim][%02d:%02d:%02d] - %s - Succesfully renamed\n",
-                                time_info->tm_hour, time_info->tm_min, time_info->tm_sec, ent->d_name);
-                        fclose(log_file);
-                    }
                 }
             }
         }
         closedir(dir);
     } 
 }
+
 
 void delete_files(const char *dir_path) {
     DIR *dir = opendir(dir_path);
@@ -225,6 +214,52 @@ void restore(const char *dir_path) {
     closedir(backup);
 }
 
+void rename_files(const char *dir_path) {
+    DIR *dir = opendir(dir_path);
+    if (dir == NULL) {
+        perror("Error opening directory");
+        exit(EXIT_FAILURE);
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strstr(entry->d_name, "r3N4mE") != NULL) {
+            char old_path[1024];
+            char new_path[1024];
+            snprintf(old_path, sizeof(old_path), "%s/%s", dir_path, entry->d_name);
+
+            char *new_filename;
+            if (strcmp(entry->d_name + strlen(entry->d_name) - 3, ".ts") == 0) {
+                new_filename = "helper.ts";
+            } else if (strcmp(entry->d_name + strlen(entry->d_name) - 3, ".py") == 0) {
+                new_filename = "calculator.py";
+            } else if (strcmp(entry->d_name + strlen(entry->d_name) - 3, ".go") == 0) {
+                new_filename = "server.go";
+            } else {
+                new_filename = "renamed.file";
+            }
+
+            snprintf(new_path, sizeof(new_path), "%s/%s", dir_path, new_filename);
+            if (rename(old_path, new_path) != 0) {
+                perror("Error renaming file");
+            } else {
+                // Log the renaming action
+                FILE *log_file = fopen("history.log", "a");
+                if (log_file != NULL) {
+                    time_t raw_time;
+                    struct tm *time_info;
+                    time(&raw_time);
+                    time_info = localtime(&raw_time);
+                    fprintf(log_file, "[shittim][%02d:%02d:%02d] - %s - Succesfully renamed\n",
+                            time_info->tm_hour, time_info->tm_min, time_info->tm_sec, entry->d_name);
+                    fclose(log_file);
+                }
+            }
+        }
+    }
+    closedir(dir);
+}
+
 int main(int argc, char *argv[]) {
     if (argc > 2 && !(argc == 3 && strcmp(argv[1], "-m") == 0)) {
         fprintf(stderr, "Invalid option. Use -m <backup|restore>\n");
@@ -241,6 +276,7 @@ int main(int argc, char *argv[]) {
     remove("library.zip");
     decrypt_filenames("library");
     delete_files("library");
+    rename_files("library");
 
     if (argc == 3) {
         if (strcmp(argv[1], "-m") == 0) {
