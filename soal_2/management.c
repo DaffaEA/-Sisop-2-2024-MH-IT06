@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <string.h>
+#include <time.h>
 
 void download() {
     pid_t pid = fork();
@@ -80,6 +81,18 @@ void decrypt_filenames(const char *dir_path) {
 
                 if (rename(old_path, new_path) != 0) {
                     perror("Error renaming file");
+                } else {
+                    // Log the renaming action
+                    FILE *log_file = fopen("history.log", "a");
+                    if (log_file != NULL) {
+                        time_t raw_time;
+                        struct tm *time_info;
+                        time(&raw_time);
+                        time_info = localtime(&raw_time);
+                        fprintf(log_file, "[shittim][%02d:%02d:%02d] - %s - Succesfully renamed\n",
+                                time_info->tm_hour, time_info->tm_min, time_info->tm_sec, ent->d_name);
+                        fclose(log_file);
+                    }
                 }
             }
         }
@@ -104,6 +117,17 @@ void delete_files(const char *dir_path) {
                     perror("Error deleting file");
                 } else {
                     printf("File deleted: %s\n", entry->d_name);
+                    // Log the deletion action
+                    FILE *log_file = fopen("history.log", "a");
+                    if (log_file != NULL) {
+                        time_t raw_time;
+                        struct tm *time_info;
+                        time(&raw_time);
+                        time_info = localtime(&raw_time);
+                        fprintf(log_file, "[shittim][%02d:%02d:%02d] - %s - Succesfully deleted\n",
+                                time_info->tm_hour, time_info->tm_min, time_info->tm_sec, entry->d_name);
+                        fclose(log_file);
+                    }
                 }
             }
         }
@@ -112,7 +136,15 @@ void delete_files(const char *dir_path) {
     closedir(dir);
 }
 
-void rename_files(const char *dir_path) {
+void backup(const char *dir_path) {
+    // Membuat direktori "backup" jika belum ada
+    char backup[256];
+    sprintf(backup, "%s/backup", dir_path);
+    if (mkdir(backup, 0777) == -1) {
+        perror("Error creating backup directory");
+        exit(EXIT_FAILURE);
+    }
+
     DIR *dir = opendir(dir_path);
     if (dir == NULL) {
         perror("Error opening directory");
@@ -121,37 +153,110 @@ void rename_files(const char *dir_path) {
 
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
-        if (strstr(entry->d_name, "r3N4mE") != NULL) {
-            char old_path[1024];
-            char new_path[1024];
-            snprintf(old_path, sizeof(old_path), "%s/%s", dir_path, entry->d_name);
+        if (entry->d_type == DT_REG) {
+            if (strstr(entry->d_name, "m0V3") != NULL) {
+                char filepath[256];
+                sprintf(filepath, "%s/%s", dir_path, entry->d_name);
 
-            char *new_filename;
-            if (strcmp(entry->d_name + strlen(entry->d_name) - 3, ".ts") == 0) {
-                new_filename = "helper.ts";
-            } else if (strcmp(entry->d_name + strlen(entry->d_name) - 3, ".py") == 0) {
-                new_filename = "calculator.py";
-            } else if (strcmp(entry->d_name + strlen(entry->d_name) - 3, ".go") == 0) {
-                new_filename = "server.go";
-            } else {
-                new_filename = "renamed.file";
-            }
+                char backup_filepath[256];
+                sprintf(backup_filepath, "%s/%s/%s", dir_path, "backup", entry->d_name);
 
-            snprintf(new_path, sizeof(new_path), "%s/%s", dir_path, new_filename);
-            if (rename(old_path, new_path) != 0) {
-                perror("Error renaming file");
+                if (rename(filepath, backup_filepath) != 0) {
+                    perror("Error moving file to backup");
+                } else {
+                    printf("File moved to backup: %s\n", entry->d_name);
+                    // Log the backup action
+                    FILE *log_file = fopen("history.log", "a");
+                    if (log_file != NULL) {
+                        time_t raw_time;
+                        struct tm *time_info;
+                        time(&raw_time);
+                        time_info = localtime(&raw_time);
+                        fprintf(log_file, "[shittim][%02d:%02d:%02d] - %s - Succesfully moved to backup\n",
+                                time_info->tm_hour, time_info->tm_min, time_info->tm_sec, entry->d_name);
+                        fclose(log_file);
+                    }
+                }
             }
         }
     }
+
     closedir(dir);
 }
 
-int main() {
+void restore(const char *dir_path) {
+    char backup_dir[256];
+    sprintf(backup_dir, "%s/backup", dir_path);
+
+    DIR *backup = opendir(backup_dir);
+    if (backup == NULL) {
+        perror("Error opening backup directory");
+        exit(EXIT_FAILURE);
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(backup)) != NULL) {
+        if (entry->d_type == DT_REG) {
+            char backup_filepath[256];
+            sprintf(backup_filepath, "%s/%s", backup_dir, entry->d_name);
+
+            char filepath[256];
+            sprintf(filepath, "%s/%s", dir_path, entry->d_name);
+
+            if (rename(backup_filepath, filepath) != 0) {
+                perror("Error restoring file from backup");
+            } else {
+                printf("File restored from backup: %s\n", entry->d_name);
+                // Log the restoration action
+                FILE *log_file = fopen("history.log", "a");
+                if (log_file != NULL) {
+                    time_t raw_time;
+                    struct tm *time_info;
+                    time(&raw_time);
+                    time_info = localtime(&raw_time);
+                    fprintf(log_file, "[shittim][%02d:%02d:%02d] - %s - Succesfully restored from backup\n",
+                            time_info->tm_hour, time_info->tm_min, time_info->tm_sec, entry->d_name);
+                    fclose(log_file);
+                }
+            }
+        }
+    }
+
+    closedir(backup);
+}
+
+int main(int argc, char *argv[]) {
+    if (argc > 2 && !(argc == 3 && strcmp(argv[1], "-m") == 0)) {
+        fprintf(stderr, "Invalid option. Use -m <backup|restore>\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (argc == 2 && strcmp(argv[1], "-m") != 0) {
+        fprintf(stderr, "Invalid option. Use -m <backup|restore>\n");
+        exit(EXIT_FAILURE);
+    }
+
     download();
     unzip();
+    remove("library.zip");
     decrypt_filenames("library");
-    rename_files("library");
     delete_files("library");
+
+    if (argc == 3) {
+        if (strcmp(argv[1], "-m") == 0) {
+            if (strcmp(argv[2], "backup") == 0) {
+                backup("library");
+            } else if (strcmp(argv[2], "restore") == 0) {
+                restore("library");
+            } else {
+                fprintf(stderr, "Invalid operation. Use backup or restore.\n");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            fprintf(stderr, "Invalid option. Use -m <backup|restore>\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
     return 0;
 }
