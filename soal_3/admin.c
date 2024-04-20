@@ -5,64 +5,37 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <errno.h>
-
-#define LOG_FILE_EXTENSION ".log"
-#define MAX_COMMAND_LENGTH 100
-#define MAX_PROCESS_NAME_LENGTH 100
-#define MAX_LINE_LENGTH 256
-#define MAX_TIMESTAMP_LENGTH 50
-#define MAX_LOGFILE_PATH_LENGTH 100
 
 void monitor_processes(const char *user) {
-    char logfile[MAX_LOGFILE_PATH_LENGTH];
-    snprintf(logfile, sizeof(logfile), "%s%s", user, LOG_FILE_EXTENSION);
-
-    FILE *fp = fopen(logfile, "a");
-    if (fp == NULL) {
-        perror("Error opening log file");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Monitoring for user '%s' started. Log file: %s\n", user, logfile);
+    char logfile[50];
+    sprintf(logfile, "%s.log", user);
 
     while (1) {
         time_t rawtime;
         struct tm *timeinfo;
         time(&rawtime);
         timeinfo = localtime(&rawtime);
-        char timestamp[MAX_TIMESTAMP_LENGTH];
+        char timestamp[50];
         strftime(timestamp, sizeof(timestamp), "[%d:%m:%Y]-[%H:%M:%S]", timeinfo);
 
-        fprintf(fp, "%s\n", timestamp);
-        printf("%s\n", timestamp);
-
-        char command[MAX_COMMAND_LENGTH];
-        snprintf(command, sizeof(command), "ps -u %s", user);
-        FILE *p = popen(command, "r");
-        if (p == NULL) {
-            fprintf(stderr, "Error executing command: %s\n", strerror(errno));
+        FILE *log_fp = fopen(logfile, "a");
+        if (log_fp == NULL) {
+            perror("Error opening log file");
             exit(EXIT_FAILURE);
         }
+        fprintf(log_fp, "%s\n", timestamp);
+        fclose(log_fp);
 
-        char line[MAX_LINE_LENGTH];
-        while (fgets(line, sizeof(line), p) != NULL) {
-            int pid;
-            char process_name[MAX_PROCESS_NAME_LENGTH];
-            if (sscanf(line, "%d %[^\n]", &pid, process_name) == 2) {
-                fprintf(fp, "%d-process_%s_JALAN\n", pid, process_name);
-                printf("%d-process_%s_JALAN\n", pid, process_name);
-            }
-        }
-        pclose(p);
+        char command[100];
+        sprintf(command, "ps -u %s | tee -a %s", user, logfile);
+        system(command);
+
         sleep(60);
     }
-
-    fclose(fp);
 }
 
 void stop_monitoring(const char *user) {
-    printf("Monitoring for user '%s' has been stopped.\n", user);
+    printf("Monitoring stopped for user %s.\n", user);
 }
 
 int main(int argc, char *argv[]) {
@@ -72,10 +45,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(argv[1], "-m") == 0) {
-
         monitor_processes(argv[2]);
     } else {
-
         stop_monitoring(argv[2]);
     }
 
