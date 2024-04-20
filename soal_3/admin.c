@@ -15,11 +15,9 @@
 #define MAX_LOGFILE_PATH_LENGTH 100
 
 void monitor_processes(const char *user) {
-    // Membuat nama file log
     char logfile[MAX_LOGFILE_PATH_LENGTH];
     snprintf(logfile, sizeof(logfile), "%s%s", user, LOG_FILE_EXTENSION);
 
-    // Membuka file log untuk ditulis
     FILE *fp = fopen(logfile, "a");
     if (fp == NULL) {
         perror("Error opening log file");
@@ -29,7 +27,6 @@ void monitor_processes(const char *user) {
     printf("Monitoring for user '%s' started. Log file: %s\n", user, logfile);
 
     while (1) {
-        // Mendapatkan timestamp
         time_t rawtime;
         struct tm *timeinfo;
         time(&rawtime);
@@ -37,11 +34,9 @@ void monitor_processes(const char *user) {
         char timestamp[MAX_TIMESTAMP_LENGTH];
         strftime(timestamp, sizeof(timestamp), "[%d:%m:%Y]-[%H:%M:%S]", timeinfo);
 
-        // Menuliskan timestamp ke konsol dan file log
         fprintf(fp, "%s\n", timestamp);
         printf("%s\n", timestamp);
 
-        // Menjalankan command ps untuk mendapatkan proses pengguna
         char command[MAX_COMMAND_LENGTH];
         snprintf(command, sizeof(command), "ps -u %s", user);
         FILE *p = popen(command, "r");
@@ -50,19 +45,17 @@ void monitor_processes(const char *user) {
             exit(EXIT_FAILURE);
         }
 
-        // Membaca output dari command ps
         char line[MAX_LINE_LENGTH];
         while (fgets(line, sizeof(line), p) != NULL) {
             int pid;
             char process_name[MAX_PROCESS_NAME_LENGTH];
             if (sscanf(line, "%d %[^\n]", &pid, process_name) == 2) {
-                // Menuliskan informasi proses ke konsol dan file log
                 fprintf(fp, "%d-process_%s_JALAN\n", pid, process_name);
                 printf("%d-process_%s_JALAN\n", pid, process_name);
             }
         }
         pclose(p);
-        sleep(60);  // Monitor every minute
+        sleep(60);
     }
 
     fclose(fp);
@@ -79,10 +72,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(argv[1], "-m") == 0) {
-        // Start monitoring
+
         monitor_processes(argv[2]);
     } else {
-        // Stop monitoring
+
         stop_monitoring(argv[2]);
     }
 
