@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 void monitor_processes(const char *user) {
     char logfile[50];
@@ -26,9 +27,43 @@ void monitor_processes(const char *user) {
         fprintf(log_fp, "%s\n", timestamp);
         fclose(log_fp);
 
-        char command[100];
-        sprintf(command, "ps -u %s | tee -a %s", user, logfile);
-        system(command);
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("Error forking");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            // Child process
+            int fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, 0644);
+            if (fd == -1) {
+                perror("Error opening log file");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+            execlp("ps", "ps", "-u", user, NULL);
+            perror("Error executing command");
+            exit(EXIT_FAILURE);
+        } else {
+            // Parent process
+            int status;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+                perror("Child process failed");
+                exit(EXIT_FAILURE);
+            }
+            // Print output to terminal
+            printf("Output for user %s:\n", user);
+            FILE *p = popen("ps -u maximumyeet", "r");
+            if (p == NULL) {
+                perror("Error executing command");
+                exit(EXIT_FAILURE);
+            }
+            char buffer[256];
+            while (fgets(buffer, sizeof(buffer), p) != NULL) {
+                printf("%s", buffer);
+            }
+            pclose(p);
+        }
 
         sleep(60);
     }
