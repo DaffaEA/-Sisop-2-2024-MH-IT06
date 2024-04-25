@@ -14,19 +14,20 @@
 
 void listFilesRecursively(char *basePath);
 
-int main() {
-    pid_t pid, sid;
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <path>\n", argv[0]);
+        return 1;
+    }
 
-    char path[MAX_PATH_LENGTH];
-
-    printf("Enter path to list files: ");
-    scanf("%s", path);
-
+    char *path = argv[1];
     FILE *file = fopen("virus.log", "w");
     if (file == NULL) {
         perror("fopen failed");
         return 1;
     }
+
+    pid_t pid, sid;
 
     // Fork off the parent process
     pid = fork();
@@ -54,9 +55,12 @@ int main() {
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
-while(1){
-    listFilesRecursively(path);
-}
+
+    while(1){
+        listFilesRecursively(path);
+    }
+
+    return 0;
 }
 
 void listFilesRecursively(char *basePath) {
@@ -114,19 +118,17 @@ void listFilesRecursively(char *basePath) {
 
                         // Open the log file in append mode
                         FILE *logfile = fopen("virus.log", "a");
-                    
+
                         // Write the message to the log file
                         fprintf(logfile, "%s", message);
 
                         // Close the log file
                         fclose(logfile);
                         sleep(15);
-                
                     }
                 }
 
                 fclose(file);
-            
             }
         }
     }
