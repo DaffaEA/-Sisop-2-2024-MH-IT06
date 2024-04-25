@@ -210,3 +210,14 @@ const char *replacements[] = {"[MALWARE]", "[SPYWARE]", "[RANSOMWARE]"};
 
 ![Screenshot 2024-04-26 010010](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/132379720/d96cb444-3505-478b-999e-d6d54c66931e)
 
+### Revisi 
+```c
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <path>\n", argv[0]);
+        return 1;
+    }
+
+    char *path = argv[1];
+```
+- Mengubah sistem input agar menggunakan argv sesuai soal
