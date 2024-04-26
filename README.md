@@ -705,3 +705,134 @@ FILE *log_file = fopen("history.log", "a");
 
 ![Screenshot 2024-04-26 032453](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/132379720/4d7c543e-e85f-410f-8442-8987f0c26397)
 
+# Soal 3 
+
+# Isi Soal 
+Pak Heze adalah seorang admin yang baik. Beliau ingin membuat sebuah program admin yang dapat memantau para pengguna sistemnya. Bantulah Pak Heze untuk membuat program  tersebut!
+a. Nama program tersebut dengan nama admin.c
+b. Program tersebut memiliki fitur menampilkan seluruh proses yang dilakukan oleh seorang user dengan menggunakan command:
+./admin <user>
+c. Program dapat memantau proses apa saja yang dilakukan oleh user. Fitur ini membuat program berjalan secara daemon dan berjalan terus menerus. Untuk menjalankan fitur ini menggunakan command: 
+./admin -m <user>
+Dan untuk mematikan fitur tersebut menggunakan: 
+./admin -s <user>
+Program akan mencatat seluruh proses yang dijalankan oleh user di file <user>.log dengan format:
+[dd:mm:yyyy]-[hh:mm:ss]_pid-process_nama-process_GAGAL/JALAN
+d. Program dapat menggagalkan proses yang dijalankan user setiap detik secara terus menerus dengan menjalankan: 
+./admin -c user
+sehingga user tidak bisa menjalankan proses yang dia inginkan dengan baik. Fitur ini dapat dimatikan dengan command:
+./admin -a user
+e. Ketika proses yang dijalankan user digagalkan, program juga akan melog dan menset log tersebut sebagai GAGAL. Dan jika di log menggunakan fitur poin c, log akan ditulis dengan JALAN
+
+## Penyelesaian
+
+### Fungsi monitor_processes(const char *user)
+
+```c
+void monitor_processes(const char *user) {
+    char logfile[50];
+    sprintf(logfile, "%s.log", user);
+
+    while (1) {
+        // Mengambil waktu saat ini
+        time_t rawtime;
+        struct tm *timeinfo;
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        
+        // Membuat timestamp dalam format tertentu
+        char timestamp[50];
+        strftime(timestamp, sizeof(timestamp), "[%d:%m:%Y]-[%H:%M:%S]", timeinfo);
+
+        // Membuka file log
+        FILE *log_fp = fopen(logfile, "a");
+        if (log_fp == NULL) {
+            perror("Error opening log file");
+            exit(EXIT_FAILURE);
+        }
+        // Menulis timestamp ke dalam file log
+        fprintf(log_fp, "%s\n", timestamp);
+        fclose(log_fp);
+
+        // Membuat proses baru untuk mengeksekusi perintah "ps"
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("Error forking");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            // Proses anak: mengalihkan output ke file log
+            int fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, 0644);
+            if (fd == -1) {
+                perror("Error opening log file");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+            // Mengeksekusi perintah "ps -u user"
+            execlp("ps", "ps", "-u", user, NULL);
+            perror("Error executing command");
+            exit(EXIT_FAILURE);
+        } else {
+            // Proses induk: menunggu proses anak selesai
+            int status;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+                perror("Child process failed");
+                exit(EXIT_FAILURE);
+            }
+            // Menampilkan output "ps" ke terminal
+            printf("Output for user %s:\n", user);
+            FILE *p = popen("ps -u maximumyeet", "r");
+            if (p == NULL) {
+                perror("Error executing command");
+                exit(EXIT_FAILURE);
+            }
+            char buffer[256];
+            while (fgets(buffer, sizeof(buffer), p) != NULL) {
+                printf("%s", buffer);
+            }
+            pclose(p);
+        }
+
+        // Menunda pemantauan selama 60 detik sebelum iterasi berikutnya
+        sleep(60);
+    }
+}
+```
+Fungsi ini bertanggung jawab untuk memantau proses yang sedang berjalan oleh pengguna tertentu. Setiap menit, fungsi ini mencatat timestamp ke dalam file log, mengeksekusi perintah "ps -u user" untuk mendapatkan daftar proses pengguna, dan menulis outputnya ke terminal serta ke dalam file log.
+
+### Fungsi stop_monitoring(const char *user)
+
+```c
+void stop_monitoring(const char *user) {
+    printf("Monitoring stopped for user %s.\n", user);
+}
+```
+Fungsi ini bertanggung jawab untuk memberhentikan pemantauan proses untuk pengguna tertentu. Ini hanya mencetak pesan bahwa pemantauan telah dihentikan untuk pengguna tersebut.
+
+### Fungsi 'main(int argc, char *argv[])'
+
+```c
+int main(int argc, char *argv[]) {
+    // Memeriksa jumlah dan isi argumen
+    if (argc != 3 || (strcmp(argv[1], "-m") != 0 && strcmp(argv[1], "-s") != 0)) {
+        printf("Usage: ./admin <-m/-s> <user>\n");
+        return EXIT_FAILURE;
+    }
+
+    // Memilih mode operasi berdasarkan argumen pertama
+    if (strcmp(argv[1], "-m") == 0) {
+        // Mode pemantauan: panggil fungsi monitor_processes dengan nama pengguna
+        monitor_processes(argv[2]);
+    } else {
+        // Mode berhenti: panggil fungsi stop_monitoring dengan nama pengguna
+        stop_monitoring(argv[2]);
+    }
+
+    return EXIT_SUCCESS;
+}
+```
+Fungsi utama ini menerima argumen dari baris perintah dan memeriksa apakah argumen yang diberikan sesuai dengan format yang diharapkan. Jika tidak, program menampilkan pesan penggunaan dan keluar dengan status gagal. Jika formatnya benar, fungsi ini memilih mode operasi berdasarkan argumen pertama dan memanggil fungsi yang sesuai.
+
+
+
