@@ -709,19 +709,24 @@ FILE *log_file = fopen("history.log", "a");
 
 # Isi Soal 
 Pak Heze adalah seorang admin yang baik. Beliau ingin membuat sebuah program admin yang dapat memantau para pengguna sistemnya. Bantulah Pak Heze untuk membuat program  tersebut!
+
 a. Nama program tersebut dengan nama admin.c
+
 b. Program tersebut memiliki fitur menampilkan seluruh proses yang dilakukan oleh seorang user dengan menggunakan command:
 ./admin <user>
+
 c. Program dapat memantau proses apa saja yang dilakukan oleh user. Fitur ini membuat program berjalan secara daemon dan berjalan terus menerus. Untuk menjalankan fitur ini menggunakan command: 
 ./admin -m <user>
 Dan untuk mematikan fitur tersebut menggunakan: 
 ./admin -s <user>
 Program akan mencatat seluruh proses yang dijalankan oleh user di file <user>.log dengan format:
 [dd:mm:yyyy]-[hh:mm:ss]_pid-process_nama-process_GAGAL/JALAN
+
 d. Program dapat menggagalkan proses yang dijalankan user setiap detik secara terus menerus dengan menjalankan: 
 ./admin -c user
 sehingga user tidak bisa menjalankan proses yang dia inginkan dengan baik. Fitur ini dapat dimatikan dengan command:
 ./admin -a user
+
 e. Ketika proses yang dijalankan user digagalkan, program juga akan melog dan menset log tersebut sebagai GAGAL. Dan jika di log menggunakan fitur poin c, log akan ditulis dengan JALAN
 
 ## Penyelesaian
@@ -835,6 +840,9 @@ int main(int argc, char *argv[]) {
 Fungsi utama ini menerima argumen dari baris perintah dan memeriksa apakah argumen yang diberikan sesuai dengan format yang diharapkan. Jika tidak, program menampilkan pesan penggunaan dan keluar dengan status gagal. Jika formatnya benar, fungsi ini memilih mode operasi berdasarkan argumen pertama dan memanggil fungsi yang sesuai.
 
 ### Hasil Output
+
+Menjalankan program dengan command ./admin -m <user> dan menghentikan program dengan command ./admin -s <user> sudah berhasil
+
 ![Screenshot from 2024-04-27 17-04-42](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/dc5e2174-ce1f-492e-98cc-cdadeae29de6)
 
 ![Screenshot from 2024-04-27 17-04-51](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/c28047f7-64f7-44de-a9fe-a152c06c1d2c)
@@ -843,8 +851,14 @@ Fungsi utama ini menerima argumen dari baris perintah dan memeriksa apakah argum
 
 ![Screenshot from 2024-04-27 17-05-14](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/ebd1bd6d-b610-44db-a10f-8003f1844e87)
 
+File .log sudah terbuat di folder
+
 ![Screenshot from 2024-04-27 17-05-28](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/bccd8fd1-eada-4384-9a39-e7f33217ca29)
+
+Isi file .log
+
+![Screenshot from 2024-04-27 17-06-01](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/ae4e7ba0-0659-44ee-bdce-b67089f645ad)
 
 ![Screenshot from 2024-04-27 17-05-52](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/4ad4a7ad-9b84-4bc1-b22c-3c490eb0d71c)
 
-![Screenshot from 2024-04-27 17-06-01](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/ae4e7ba0-0659-44ee-bdce-b67089f645ad)
+
