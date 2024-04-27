@@ -837,5 +837,14 @@ Fungsi utama ini menerima argumen dari baris perintah dan memeriksa apakah argum
 ### Hasil Output
 ![Screenshot from 2024-04-27 17-04-42](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/dc5e2174-ce1f-492e-98cc-cdadeae29de6)
 
+![Screenshot from 2024-04-27 17-04-51](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/c28047f7-64f7-44de-a9fe-a152c06c1d2c)
 
+![Screenshot from 2024-04-27 17-05-08](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/eca4a6ff-f033-4f45-ad17-591cda4f506f)
 
+![Screenshot from 2024-04-27 17-05-14](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/ebd1bd6d-b610-44db-a10f-8003f1844e87)
+
+![Screenshot from 2024-04-27 17-05-28](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/bccd8fd1-eada-4384-9a39-e7f33217ca29)
+
+![Screenshot from 2024-04-27 17-05-52](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/4ad4a7ad-9b84-4bc1-b22c-3c490eb0d71c)
+
+![Screenshot from 2024-04-27 17-06-01](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/ae4e7ba0-0659-44ee-bdce-b67089f645ad)
