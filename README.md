@@ -862,3 +862,220 @@ Isi file .log
 ![Screenshot from 2024-04-27 17-05-52](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/4ad4a7ad-9b84-4bc1-b22c-3c490eb0d71c)
 
 
+# Soal 4 
+
+## Isi Soal
+Salomo memiliki passion yang sangat dalam di bidang sistem operasi. Saat ini, dia ingin mengotomasi kegiatan-kegiatan yang ia lakukan agar dapat bekerja secara efisien. Bantulah Salomo untuk membuat program yang dapat mengotomasi kegiatan dia!
+(NB: Soal di uji coba dan berhasil di sistem yang menggunakan MacOS dan linux yang menggunakan dual boot dan VM. Untuk teman-teman yang menggunakan WSL bisa mengerjakan soal yang lain ya)
+
+Salomo ingin dapat membuka berbagai macam aplikasi dengan banyak jendela aplikasi dalam satu command. Namai file program tersebut setup.c
+
+Program dapat membuka berbagai macam aplikasi dan banyak jendela aplikasi sekaligus (bisa membuka 1 atau lebih aplikasi dengan 1 atau lebih window (kecuali aplikasi yang tidak bisa dibuka dengan banyak window seperti discord)) dengan menjalankan: 
+./setup -o <app1> <num1> <app2> <num2>.....<appN> <numN>
+Contoh penggunaannya adalah sebagai berikut: 
+./setup -o firefox 2 wireshark 2
+Program akan membuka 2 jendela aplikasi firefox dan 2 jendela aplikasi wireshark.
+
+Program juga dapat membuka aplikasi dengan menggunakan file konfigurasi dengan menggunakan 
+./setup -f file.conf 
+Format file konfigurasi dibebaskan, namun pastikan dapat menjalankan fitur dari poin 2.
+Contoh isi file.conf:
+Firefox 2
+Wireshark 3
+
+Ketika menjalankan command contoh, program akan membuka 2 jendela aplikasi firefox dan 3 jendela aplikasi wireshark.
+Program dapat mematikan semua aplikasi yg dijalankan oleh program tersebut dengan: 
+./setup -k
+
+Program juga dapat mematikan aplikasi yang dijalankan sesuai dengan file konfigurasi. 
+Contohnya: 
+./setup -k file.conf 
+Command ini hanya mematikan aplikasi yang dijalankan dengan 
+./setup -f file.conf
+
+## Penyelesaian // setup.c
+
+```c
+int main(int argc, char *argv[]) {
+    loadRunningApps();
+
+    if (argc < 2) {
+        printf("Penggunaan: %s -o <app1> <num1> <app2> <num2> ... <appN> <numN> or %s -f <filename> or %s -k\n", argv[0], argv[0], argv[0]);
+        exit(1);
+    }
+
+    if (strcmp(argv[1], "-o") == 0) {
+        char *apps[MAX_APPS];
+        int num_apps[MAX_APPS];
+        int numArgs = argc - 3;
+
+        int i, j, appIndex = 0;
+        for (i = 2; i < argc; i += 2) {
+            apps[appIndex] = argv[i];
+            num_apps[appIndex] = atoi(argv[i + 1]);
+            appIndex++;
+        }
+        apps[appIndex] = NULL;
+
+        openApps(apps, num_apps);
+        saveRunningApps();
+    } else if (strcmp(argv[1], "-f") == 0) {
+        if (argc != 3) {
+            printf("Penggunaan: %s -f <filename>\n", argv[0]);
+            exit(1);
+        }
+        readConfigFile(argv[2]);
+        saveRunningApps();
+    } else if (strcmp(argv[1], "-k") == 0) {
+        if (argc == 3) {
+            closeAppsFromFile(argv[2]);
+        } else {
+            closeApps();
+            remove(FILENAME);
+        }
+    } else {
+        printf("Opsi tidak valid\n");
+        exit(1);
+    }
+
+    return 0;
+}
+```
+Pada kode tersebut ada pengatur untuk argumen-argumen berikut:
+-  Argumen `-o` yang digunakan untuk open program berdasarkan parameter yang diketikan setelahnya, contoh `./setup -o wireshark 2 firefox 2`
+-  Argumen `-k` yang digunakan untuk mengekill semua program yang dijalankan menggunakan `./setup -k`
+-  Argumen `-f` yang digunakan untuk open program berdasarkan file config yang kita ketikkan setelahnya, contoh `./setup -f file.conf`
+-  Argumen `-k` juga dapat diimplementasikan untuk melakukan kill sesuai file conf dengan cara `./setup -k file.conf`
+
+### Proses membuka Aplikasi 
+Dimulai dengan membuka file untuk mendapatkan PID yang dijalankan // sudah ada
+```c
+void loadRunningApps() {
+    FILE *file = fopen(FILENAME, "r");
+    if (file != NULL) {
+        fscanf(file, "%d", &num_running_apps);
+        for (int i = 0; i < num_running_apps; i++) {
+            fscanf(file, "%d", &running_apps[i]);
+        }
+        fclose(file);
+    }
+}
+```
+Setelah dibuat filenya, Proses buka App memiliki fungsi untuk menambahkan PID ke file txt yang telah dibuat dan menambahkan serta melakukan read program-program ke dalam file txtnya
+
+```c
+void addRunningApp(pid_t pid) {
+    if (num_running_apps < MAX_APPS) {
+        running_apps[num_running_apps++] = pid;
+        printf("Jumlah aplikasi berjalan: %d\n", num_running_apps);
+    }
+}
+void saveRunningApps() {
+    FILE *file = fopen(FILENAME, "w");
+    if (file != NULL) {
+        fprintf(file, "%d\n", num_running_apps);
+        for (int i = 0; i < num_running_apps; i++) {
+            fprintf(file, "%d\n", running_apps[i]);
+        }
+        fclose(file);
+    }
+}
+
+void openApps(char *apps[], int num_apps[]) {
+    int i, j;
+    pid_t pid;
+
+    for (i = 0; i < MAX_APPS && apps[i] != NULL; i++) {
+        for (j = 0; j < num_apps[i]; j++) {
+            pid = fork();
+
+            if (pid == 0) {
+                execlp(apps[i], apps[i], NULL);
+                exit(0);
+            } else {
+                addRunningApp(pid);
+            }
+        }
+    }
+}
+void readConfigFile(char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Error: Cannot open file %s\n", filename);
+        exit(1);
+    }
+
+    char line[MAX_APP_NAME];
+    char *app;
+    int num;
+
+    while (fgets(line, sizeof(line), file)) {
+        app = strtok(line, " ");
+        num = atoi(strtok(NULL, " \n"));
+
+        for (int i = 0; i < num; i++) {
+            pid_t pid = fork();
+            if (pid == 0) {
+                execlp(app, app, NULL);
+                exit(0);
+            } else {
+                addRunningApp(pid);
+            }
+        }
+    }
+
+    fclose(file);
+}
+```
+### Proses melakukan Kill Apps
+Dalam proses melakukan kill appnya saya  menggunakan pkill ketika ingin kill berdasarkan file.conf
+Jika tidak spesifik terhadap file, maka saya melakukan kill berdasarkan apa yang ada pada file txtnya
+```c
+void closeApp(char *app) {
+    if (fork() == 0) {
+        execlp("pkill", "pkill", app, NULL);
+        exit(0);
+    }
+    sleep(1);
+}
+
+void closeAppsFromFile(const char* filename) {
+    FILE *file = fopen(filename, "r");
+    if (file != NULL) {
+        char app[256];
+        int num;
+        while (fscanf(file, "%s %d", app, &num) == 2) {
+            closeApp(app);
+        }
+        fclose(file);
+    }
+}
+void closeApps() {
+    FILE *file = fopen(FILENAME, "r");
+    if (file != NULL) {
+        int num_apps;
+        fscanf(file, "%d", &num_apps);
+        for (int i = 0; i < num_apps; i++) {
+            int pid;
+            fscanf(file, "%d", &pid);
+            if (kill(pid, SIGTERM) == -1) {
+                perror("Error killing process");
+            }
+        }
+        fclose(file);
+    }
+}
+```
+
+### Dokumentasi // Hasil
+![image](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/142997842/3ca70fa8-e040-464c-b4e6-d61fbab3a356)
+![image](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/142997842/461d2ebf-83c9-43b9-9a45-9cb7e017b6e2)
+
+### Revisi 
+Revisi dilakukan dalam memperbaiki function untuk membuka app melalui file.conf dan melakukan kill terhadap app yang dijalankan melalui file.conf
+![image](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/142997842/6c092344-6f74-4ab1-9f9e-bba94b49ce92)
+![image](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/142997842/c2eb6048-eadf-418e-ad61-076d8ad21509)
+![image](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/142997842/2d0c5cf1-3f15-4bbb-b3ee-d715fa8812ff)
+![image](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/142997842/5ac0e407-b77a-41d1-9e55-07bb07fa8546)
+Setelah di cek dengan `ps aux` terlihat bahwa sudah tidak ada program yang running
+
