@@ -9,8 +9,6 @@ Kelompok IT-06:
 
 -Johanes Edward Nathanael 5027231067
 
-# Pengantar 
-
 # Soal 1
 
 ## Isi Soal
