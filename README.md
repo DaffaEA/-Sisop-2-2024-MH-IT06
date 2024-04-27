@@ -834,5 +834,8 @@ int main(int argc, char *argv[]) {
 ```
 Fungsi utama ini menerima argumen dari baris perintah dan memeriksa apakah argumen yang diberikan sesuai dengan format yang diharapkan. Jika tidak, program menampilkan pesan penggunaan dan keluar dengan status gagal. Jika formatnya benar, fungsi ini memilih mode operasi berdasarkan argumen pertama dan memanggil fungsi yang sesuai.
 
+### Hasil Output
+![Screenshot from 2024-04-27 17-04-42](https://github.com/DaffaEA/Sisop-2-2024-MH-IT06/assets/144967723/dc5e2174-ce1f-492e-98cc-cdadeae29de6)
+
 
 
